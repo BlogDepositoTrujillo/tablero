@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario Semanal - Depósito Trujillo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-board: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --header-bg: rgba(15, 23, 42, 0.85);
+            
+            /* Colores de Post-its */
+            --pink-card: #fce7f3; --pink-accent: #ec4899;
+            --blue-card: #e0f2fe; --blue-accent: #0284c7;
+            --green-card: #dcfce7; --green-accent: #16a34a;
+            --amber-card: #fef3c7; --amber-accent: #d97706;
+            --text-dark: #1e293b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            background-color: var(--bg-board);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(2, 132, 199, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(22, 163, 74, 0.12) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(217, 119, 6, 0.12) 0px, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #f8fafc;
+            padding: 24px;
+        }
+
+        #statusAlert {
+            display: none;
+            background: #ef4444;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        /* HEADER */
+        header {
+            background: var(--header-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px 28px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand-container { display: flex; align-items: center; gap: 14px; }
+        .brand-logo {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            color: white; width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1.4rem;
+            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.4);
+        }
+
+        .brand-text h1 {
+            font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .brand-text p { font-size: 0.82rem; color: #94a3b8; font-weight: 500; }
+
+        .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .custom-select {
+            background: rgba(30, 41, 59, 0.8); color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 10px 16px; border-radius: 12px; font-size: 0.88rem; font-weight: 600; outline: none;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .custom-select:hover { border-color: rgba(255, 255, 255, 0.3); background: rgba(51, 65, 85, 0.9); }
+
+        .btn-glow {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white; border: none; padding: 10px 20px; border-radius: 12px;
+            font-size: 0.88rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
+            transition: all 0.2s ease;
+        }
+        .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.55); }
+
+        /* CALENDARIO SEMANAL */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px; align-items: start;
+        }
+
+        .column {
+            background: var(--panel-bg); backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px; padding: 14px; min-height: 580px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+
+        .column-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 12px; margin-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .column-title { font-size: 0.88rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #cbd5e1; }
+        .badge-count {
+            background: rgba(255, 255, 255, 0.1); color: #f8fafc;
+            padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* TARJETAS POST-IT COMPACTAS */
+        .postit {
+            padding: 12px 14px; border-radius: 6px; margin-bottom: 12px; position: relative;
+            box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.25);
+            color: var(--text-dark); transition: all 0.25s ease;
+            cursor: pointer; overflow: hidden;
+        }
+
+        .postit::before {
+            content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+            width: 45px; height: 14px; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(2px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12); border-radius: 2px;
+        }
+
+        .postit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.3);
+        }
+
+        .postit[data-author="Natalia Community"] { background: var(--pink-card); border-bottom: 3px solid var(--pink-accent); }
+        .postit[data-author="Natalia Ospina"] { background: var(--blue-card); border-bottom: 3px solid var(--blue-accent); }
+        .postit[data-author="José"] { background: var(--green-card); border-bottom: 3px solid var(--green-accent); }
+        .postit[data-author="Lina"] { background: var(--amber-card); border-bottom: 3px solid var(--amber-accent); }
+
+        .postit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .postit-author { font-size: 0.70rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; }
+        .postit[data-author="Natalia Community"] .postit-author { color: var(--pink-accent); }
+        .postit[data-author="Natalia Ospina"] .postit-author { color: var(--blue-accent); }
+        .postit[data-author="José"] .postit-author { color: var(--green-accent); }
+        .postit[data-author="Lina"] .postit-author { color: var(--amber-accent); }
+
+        .postit-title {
+            font-size: 0.88rem; font-weight: 800; line-height: 1.25; color: #0f172a;
+            display: flex; justify-content: space-between; align-items: center; gap: 8px;
+        }
+
+        .postit-expandable {
+            display: none;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(0, 0, 0, 0.12);
+        }
+
+        .postit.open .postit-expandable { display: block; }
+
+        .postit-body { font-size: 0.78rem; line-height: 1.4; color: #334155; font-weight: 500; margin-bottom: 10px; white-space: pre-line; }
+
+        .postit-footer { display: flex; justify-content: space-between; align-items: center; }
+
+        .nav-btns { display: flex; gap: 4px; }
+        .btn-nav {
+            background: rgba(0, 0, 0, 0.08); border: none; width: 24px; height: 24px; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            font-weight: bold; font-size: 0.7rem; color: #1e293b; transition: all 0.15s ease;
+        }
+        .btn-nav:hover { background: rgba(0, 0, 0, 0.18); }
+        .btn-delete { background: none; border: none; color: #ef4444; cursor: pointer; opacity: 0.7; font-size: 0.85rem; }
+
+        .btn-toggle {
+            background: rgba(0, 0, 0, 0.06); border: none; width: 20px; height: 20px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 0.6rem;
+            color: #334155; transition: transform 0.2s ease; cursor: pointer; flex-shrink: 0;
+        }
+
+        .postit.open .btn-toggle { transform: rotate(180deg); background: rgba(0, 0, 0, 0.12); }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-card {
+            background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px; padding: 28px; width: 100%; max-width: 440px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); color: #f8fafc;
+        }
+        .modal-card h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; color: #ffffff; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; color: #cbd5e1; text-transform: uppercase; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px; padding: 12px 14px; color: #f8fafc; font-family: inherit; font-size: 0.9rem; outline: none;
+        }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+        .btn-cancel { background: transparent; color: #94a3b8; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div id="statusAlert"></div>
+
+    <header>
+        <div class="brand-container">
+            <div class="brand-logo">DT</div>
+            <div class="brand-text">
+                <h1>Depósito Trujillo — Marketing semana 2 septiembre</h1>
+                <p>Centro de Control Digital & Estrategia Comercial</p>
+            </div>
+        </div>
+        <div class="toolbar">
+            <!-- SELECTOR DE SEMANA -->
+            <select id="filterWeek" class="custom-select" onchange="renderNotes()">
+                <option value="Semana 1">📅 Semana 1</option>
+                <option value="Semana 2" selected>📅 Semana 2</option>
+                <option value="Semana 3">📅 Semana 3</option>
+                <option value="Semana 4">📅 Semana 4</option>
+            </select>
+
+            <!-- SELECTOR DE COLABORADOR -->
+            <select id="filterAuthor" class="custom-select" onchange="renderNotes()">
+                <option value="Todos">👥 Todos los colaboradores</option>
+                <option value="Natalia Community">🌸 Natalia Community</option>
+                <option value="Natalia Ospina">🌊 Natalia Ospina</option>
+                <option value="José">🌿 José (Líder Digital)</option>
+                <option value="Lina">🍊 Lina (Operaciones)</option>
+            </select>
+
+            <button class="btn-glow" onclick="openModal()">⚡ Nueva Nota</button>
+        </div>
+    </header>
+
+    <!-- CALENDARIO DE LUNES A SÁBADO -->
+    <div class="board">
+        <div class="column">
+            <div class="column-header"><div class="column-title">Lunes</div><span class="badge-count" id="count-Lunes">0</span></div>
+            <div id="col-Lunes"></div>
+        </div>
+        <div class="column">
+            <div class="column-header"><div class="column-title">Martes</div><span class="badge-count" id="count-Martes">0</span></div>
+            <div id="col-Martes"></div>
+        </div>
+        <div class="column">
+            <div class="column-header"><div class="column-title">Miércoles</div><span class="badge-count" id="count-Miercoles">0</span></div>
+            <div id="col-Miercoles"></div>
+        </div>
+        <div class="column">
+            <div class="column-header"><div class="column-title">Jueves</div><span class="badge-count" id="count-Jueves">0</span></div>
+            <div id="col-Jueves"></div>
+        </div>
+        <div class="column">
+            <div class="column-header"><div class="column-title">Viernes</div><span class="badge-count" id="count-Viernes">0</span></div>
+            <div id="col-Viernes"></div>
+        </div>
+        <div class="column">
+            <div class="column-header"><div class="column-title">Sábado</div><span class="badge-count" id="count-Sabado">0</span></div>
+            <div id="col-Sabado"></div>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="noteModal">
+        <div class="modal-card">
+            <h3>📌 Programar Contenido</h3>
+            <form id="noteForm">
+                <div class="form-group">
+                    <label>Responsable</label>
+                    <select id="author" required>
+                        <option value="Natalia Community">Natalia Community</option>
+                        <option value="Natalia Ospina">Natalia Ospina</option>
+                        <option value="José">José</option>
+                        <option value="Lina">Lina</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Semana</label>
+                    <select id="week" required>
+                        <option value="Semana 1">Semana 1</option>
+                        <option value="Semana 2" selected>Semana 2</option>
+                        <option value="Semana 3">Semana 3</option>
+                        <option value="Semana 4">Semana 4</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Día de la Semana</label>
+                    <select id="day" required>
+                        <option value="Lunes">Lunes</option>
+                        <option value="Martes">Martes</option>
+                        <option value="Miercoles">Miércoles</option>
+                        <option value="Jueves">Jueves</option>
+                        <option value="Viernes">Viernes</option>
+                        <option value="Sabado">Sábado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Título del Entregable / Publicación</label>
+                    <input type="text" id="title" placeholder="Ej: Video Reel sobre impermeabilización" required>
+                </div>
+                <div class="form-group">
+                    <label>Detalles / Requerimientos</label>
+                    <textarea id="details" rows="3" placeholder="Ej: Requiere confirmación de precios por José"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-glow">Publicar Nota</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAccSrOnxZY61kmbeJ5Xu3gtPpNmEPyYc",
+            authDomain: "tablero-5842d.firebaseapp.com",
+            databaseURL: "https://tablero-5842d-default-rtdb.firebaseio.com",
+            projectId: "tablero-5842d",
+            storageBucket: "tablero-5842d.appspot.co",
+            messagingSenderId: "238521683665",
+            appId: "1:238521683665:web:82c37b1788ed1a816b3ff0",
+            measurementId: "G-1RR2D7BLXQ"
+        };
+
+        function showAlert(msg) {
+            const el = document.getElementById('statusAlert');
+            el.innerText = msg;
+            el.style.display = 'block';
+        }
+
+        let db, notesRef;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            notesRef = db.ref('notas_trujillo'); // Usar la referencia original
+        } catch (e) {
+            showAlert("Error de conexión: " + e.message);
+        }
+
+        let notes = [];
+
+        if (notesRef) {
+            notesRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                notes = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        let item = { id: key, ...data[key] };
+
+                        // MAPEO AUTOMÁTICO DE NOTAS ANTIGUAS
+                        if (!item.week) item.week = "Semana 2"; // Asignar a la Semana 2 si no la tiene
+                        
+                        if (!item.day) {
+                            if (item.status === 'todo') item.day = 'Lunes';
+                            else if (item.status === 'progress') item.day = 'Miercoles';
+                            else if (item.status === 'review') item.day = 'Jueves';
+                            else if (item.status === 'done') item.day = 'Viernes';
+                            else item.day = 'Lunes';
+                        }
+
+                        notes.push(item);
+                    });
+                }
+                renderNotes();
+            }, (error) => {
+                showAlert("⚠️ Error de Permisos: Revisa las Reglas de Firebase (PERMISSION_DENIED).");
+            });
+        }
+
+        function renderNotes() {
+            const selectedAuthor = document.getElementById('filterAuthor').value;
+            const selectedWeek = document.getElementById('filterWeek').value;
+
+            ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'].forEach(d => { 
+                document.getElementById(`col-${d}`).innerHTML = ''; 
+            });
+
+            let counts = { Lunes: 0, Martes: 0, Miercoles: 0, Jueves: 0, Viernes: 0, Sabado: 0 };
+
+            notes.forEach(note => {
+                if (note.week !== selectedWeek) return;
+                if (selectedAuthor !== 'Todos' && note.author !== selectedAuthor) return;
+
+                if (counts[note.day] !== undefined) {
+                    counts[note.day]++;
+
+                    const noteEl = document.createElement('div');
+                    noteEl.className = 'postit';
+                    noteEl.setAttribute('data-author', note.author);
+                    
+                    noteEl.innerHTML = `
+                        <div class="postit-header">
+                            <span class="postit-author">${getAuthorIcon(note.author)} ${note.author}</span>
+                        </div>
+                        <div class="postit-title">
+                            <span>${note.title}</span>
+                            <button class="btn-toggle" onclick="toggleNote(event, this)">▼</button>
+                        </div>
+                        <div class="postit-expandable">
+                            <div class="postit-body">${note.details || 'Sin observaciones.'}</div>
+                            <div class="postit-footer">
+                                <div class="nav-btns">
+                                    ${getPrevBtn(note.id, note.day)}
+                                    ${getNextBtn(note.id, note.day)}
+                                </div>
+                                <button class="btn-delete" onclick="deleteNote('${note.id}')" title="Eliminar nota">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+
+                    noteEl.addEventListener('click', function(e) {
+                        if(!e.target.classList.contains('btn-nav') && !e.target.classList.contains('btn-delete')) {
+                            this.classList.toggle('open');
+                        }
+                    });
+
+                    document.getElementById(`col-${note.day}`).appendChild(noteEl);
+                }
+            });
+
+            ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'].forEach(d => {
+                document.getElementById(`count-${d}`).innerText = counts[d];
+            });
+        }
+
+        function toggleNote(e, btn) {
+            e.stopPropagation();
+            const card = btn.closest('.postit');
+            card.classList.toggle('open');
+        }
+
+        function getAuthorIcon(a) {
+            if(a === 'Natalia Community') return '🌸';
+            if(a === 'Natalia Ospina') return '🌊';
+            if(a === 'José') return '🌿';
+            return '🍊';
+        }
+
+        function getPrevBtn(id, currentDay) {
+            const days = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+            const idx = days.indexOf(currentDay);
+            return idx > 0 ? `<button class="btn-nav" onclick="moveNote(event, '${id}', '${days[idx - 1]}')">◄</button>` : '';
+        }
+
+        function getNextBtn(id, currentDay) {
+            const days = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+            const idx = days.indexOf(currentDay);
+            return idx < days.length - 1 ? `<button class="btn-nav" onclick="moveNote(event, '${id}', '${days[idx + 1]}')">►</button>` : '';
+        }
+
+        function moveNote(e, id, newDay) {
+            e.stopPropagation();
+            if (notesRef) notesRef.child(id).update({ day: newDay });
+        }
+
+        function deleteNote(id) {
+            if (notesRef && confirm('¿Deseas descolgar esta nota?')) {
+                notesRef.child(id).remove();
+            }
+        }
+
+        function openModal() { document.getElementById('noteModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('noteModal').style.display = 'none'; }
+
+        document.getElementById('noteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!notesRef) {
+                alert("No se puede publicar: Firebase no está conectado.");
+                return;
+            }
+
+            const newNote = {
+                author: document.getElementById('author').value,
+                week: document.getElementById('week').value,
+                day: document.getElementById('day').value,
+                title: document.getElementById('title').value,
+                details: document.getElementById('details').value
+            };
+
+            notesRef.push(newNote)
+                .then(() => {
+                    closeModal();
+                    this.reset();
+                })
+                .catch(err => {
+                    alert("Error al publicar la nota: " + err.message);
+                });
+        });
+    </script>
+</body>
+</html>
